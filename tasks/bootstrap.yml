@@ -45,7 +45,7 @@
 - name: collect ssh fingerprints
   shell: >
     ssh-keyscan
-    {% for host in groups['db'] %}
+    {% for host in groups['repmgr_cluster_group'] %}
     {{ hostvars[host].ansible_host }}
     {% endfor %}
   register: __ssh_fingerprints
