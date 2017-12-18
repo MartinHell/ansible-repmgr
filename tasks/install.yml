@@ -5,6 +5,7 @@
     pkg: "{{ item }}"
     state: "{{ repmgr_package_state }}"
   with_items: "{{ repmgr_packages }}"
+  become: true
 
 - name: short command wrapper
   copy:
@@ -16,4 +17,4 @@
     owner: root
     group: root
     mode: 0755
-
+  become: true

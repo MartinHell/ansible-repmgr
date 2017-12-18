@@ -2,18 +2,20 @@
 repmgr_package_state: present
 
 repmgr_packages:
-  - repmgr
+  - postgresql-{{ repmgr_pg_version }}-repmgr
   - python-psycopg2
   - rsync
   - ssh
+
+repmgr_pg_version: 9.4
 
 repmgr_conf: /etc/repmgr.conf
 repmgr_user: postgres
 repmgr_group: postgres
 repmgr_cluster_group: all
 repmgr_bootstrap: off
-repmgr_pg_data_dir: /var/lib/postgresql/9.4/main
-repmgr_func_path: /usr/share/postgresql/9.4/contrib/repmgr_funcs.sql
+repmgr_pg_data_dir: /var/lib/postgresql/{{ repmgr_pg_version }}/main
+repmgr_func_path: /usr/share/postgresql/{{ repmgr_pg_version }}/contrib/repmgr_funcs.sql
 
 repmgr_cluster_name: test
 # repmgr_node_id must be set
@@ -85,7 +87,7 @@ repmgr_cron: []
 #   weekday: *
 #   user: "postgres"
 #   month: *
-#   weekday: *  
+#   weekday: *
 #   disabled: false
 
 # Need cron task or not

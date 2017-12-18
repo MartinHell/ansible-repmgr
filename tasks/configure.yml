@@ -11,6 +11,7 @@
   with_items:
     - ~{{ repmgr_user }}/.pgpass
     - ~root/.pgpass
+  become: true
 
 - name: repmgr configuration directory
   file:
@@ -19,6 +20,7 @@
     group: root
     mode: "0755"
     state: directory
+  become: true
 
 - name: repmgr main configuration file
   template:
@@ -29,6 +31,7 @@
     mode: "0644"
   notify:
     - restart repmgrd
+  become: true
 
 - name: repmgrd debian default file
   template:
@@ -39,4 +42,4 @@
     mode: "0644"
   notify:
     - restart repmgrd
-
+  become: true

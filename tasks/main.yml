@@ -1,16 +1,15 @@
 ---
 
-- include: install.yml
+- import_tasks: install.yml
   tags: [repmgr, repmgr-install]
 
-- include: configure.yml
+- import_tasks: configure.yml
   tags: [repmgr, repmgr-configure]
 
-- include: bootstrap.yml
+- import_tasks: bootstrap.yml
   when: repmgr_bootstrap|bool
   tags: [repmgr, repmgr-bootstrap]
 
-- include: cron_jobs.yml
+- import_tasks: cron_jobs.yml
   when: repmgr_cron_status
   tags: [repmgr, repmgr-cron]
-

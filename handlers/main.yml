@@ -1,22 +1,25 @@
 ---
 
 - name: start repmgrd
-  service:
+  systemd:
     name: repmgrd
     state: started
+  become: true
 
 - name: stop repmgrd
-  service:
+  systemd:
     name: repmgrd
     state: stop
+  become: true
 
 - name: restart repmgrd
-  service:
+  systemd:
     name: repmgrd
     state: restarted
+  become: true
 
 - name: reload repmgrd
-  service:
+  systemd:
     name: repmgrd
     state: reloaded
-
+  become: true

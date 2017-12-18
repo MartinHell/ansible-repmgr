@@ -13,3 +13,4 @@
      weekday: "{{ item.weekday }}"
      user: "{{ item.user }}"
   with_items: "{{ repmgr_cron }}"
+  become: true

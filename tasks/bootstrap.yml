@@ -7,6 +7,7 @@
     group: "{{ repmgr_group }}"
     mode: 0755
     state: directory
+  become: true
 
 - name: private ssh rsa key
   copy:
@@ -15,6 +16,7 @@
     group: "{{ repmgr_group }}"
     mode: 0600
     content: "{{ repmgr_ssh_private_key | mandatory }}"
+  become: true
 
 - name: public ssh rsa key
   copy:
@@ -23,6 +25,7 @@
     group: "{{ repmgr_group }}"
     mode: 0600
     content: "{{ repmgr_ssh_public_key | mandatory }}"
+  become: true
 
 - name: ssh authorized keys
   lineinfile:
@@ -32,12 +35,18 @@
     group: "{{ repmgr_group }}"
     mode: 0600
     line: "{{ repmgr_ssh_public_key | mandatory }}"
+  become: true
+
+- name: display all variables
+  debug:
+    var: hostvars[inventory_hostname]
+    verbosity: 4
 
 - name: collect ssh fingerprints
   shell: >
     ssh-keyscan
-    {% for host in groups[repmgr_cluster_group] %}
-    {{ hostvars[host].ansible_default_ipv4.address }}
+    {% for host in groups['db'] %}
+    {{ hostvars[host].ansible_host }}
     {% endfor %}
   register: __ssh_fingerprints
 
@@ -50,6 +59,7 @@
     mode: 0600
     line: "{{ item }}"
   with_items: __ssh_fingerprints.stdout_lines
+  become: true
 
 - name: create user for repmgr
   postgresql_user:
@@ -67,25 +77,29 @@
     state: present
   when: repmgr_is_master|bool
 
-- name: install repmgr functions
-  shell: psql -U {{ repmgr_db_user }} -f {{ repmgr_func_path }} {{ repmgr_db_name }}
-  when: repmgr_is_master|bool
+#- name: install repmgr functions
+#  shell: psql -U {{ repmgr_db_user }} -f {{ repmgr_func_path }} {{ repmgr_db_name }}
+#  when: repmgr_is_master|bool
 
 - name: register master node
   shell: repmgrctl master register
+  become: true
   become_user: "{{ repmgr_user }}"
+
   when: repmgr_is_master|bool
 
 - name: shutdown standby server
-  service:
+  systemd:
     name: postgresql
     state: stopped
+  become: true
   when: not repmgr_is_master|bool
 
 - name: clean out pgdata directory on slave
   file:
     path: "{{ repmgr_pg_data_dir }}"
     state: absent
+  become: true
   when: not repmgr_is_master|bool
 
 - name: clone standby from master
@@ -95,39 +109,42 @@
       --host {{ repmgr_master_node }} \
       --dbname {{ repmgr_db_name }} \
       --user {{ repmgr_db_user }} \
-      --data-dir {{ repmgr_pg_data_dir }} \
+      --pgdata {{ repmgr_pg_data_dir }} \
       --verbose \
       standby clone
+  become: true
   become_user: "{{ repmgr_user }}"
   when: not repmgr_is_master|bool
 
 - name: start standby server
-  service:
+  systemd:
     name: postgresql
     state: started
+  become: true
   when: not repmgr_is_master|bool
 
 - name: register standby server
   shell: repmgrctl standby register
+  become: true
   become_user: "{{ repmgr_user }}"
   when: not repmgr_is_master|bool
 
-- name: FIXME -- wait for standby node information to appear in replicated db
-  shell: |
-    RETRY=0
-    while true; do
-      RETRY=$(($RETRY + 1))
-      COUNT=$(psql -qAt -U {{ repmgr_db_user }} \
-        -c 'SELECT COUNT(1) FROM repmgr_test.repl_nodes WHERE id={{ repmgr_node_id }}' \
-        {{ repmgr_db_name }})
-      test $COUNT -ge 1 && exit 0
-      test $RETRY -ge 15 && exit 1
-      sleep 1
-    done
+#- name: FIXME -- wait for standby node information to appear in replicated db
+#  shell: |
+#    RETRY=0
+#    while true; do
+#      RETRY=$(($RETRY + 1))
+#      COUNT=$(psql -qAt -U {{ repmgr_db_user }} \
+#        -c 'SELECT COUNT(1) FROM repmgr_test.repl_nodes WHERE id={{ repmgr_node_id }}' \
+#        {{ repmgr_db_name }})
+#      test $COUNT -ge 1 && exit 0
+#      test $RETRY -ge 15 && exit 1
+#      sleep 1
+#    done
 
 - name: repmgrd service start
-  service:
+  systemd:
     name: repmgrd
     enabled: true
     state: started
-
+  become: true
